@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Relatório de salas sem uso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&display=swap">
+<style>
+:root{--bg:#eef2f0;--card:#fff;--ink:#16302a;--mute:#5d726c;--line:#cfdad6;--acc:#e3a400;--accink:#1d1500;--ok:#1f7a57;--chip:#dcebe5;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1b18;--card:#172622;--ink:#e6f0ec;--mute:#92aaa2;--line:#2b4039;--chip:#244037;--ok:#5fd0a0}}
+:root[data-theme="dark"]{--bg:#0f1b18;--card:#172622;--ink:#e6f0ec;--mute:#92aaa2;--line:#2b4039;--chip:#244037;--ok:#5fd0a0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 Archivo,system-ui,sans-serif}
+main{max-width:640px;margin:0 auto;padding:20px 16px 40px}
+h1{font-weight:800;font-size:clamp(28px,7vw,40px);line-height:1.05;margin:8px 0 4px;letter-spacing:-.02em}
+.sub{color:var(--mute);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-weight:600;font-size:14px;margin-bottom:4px}
+input,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+input:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.field{margin-bottom:12px}
+.add{display:flex;gap:8px}
+button,.btn{font:600 16px Archivo,sans-serif;border:0;border-radius:8px;padding:10px 16px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.primary{background:var(--acc);color:var(--accink)}
+.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.wa{background:#1fa855;color:#fff;flex:1}
+.hint{font-size:13px;color:var(--mute);margin:6px 0 0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;min-height:36px}
+.chip{background:var(--chip);border-radius:999px;padding:4px 6px 4px 12px;display:inline-flex;align-items:center;gap:4px;font-weight:600}
+.chip button{background:none;color:var(--mute);padding:2px 8px;font-size:18px;line-height:1}
+.empty{color:var(--mute);font-size:14px;margin:0}
+pre{white-space:pre-wrap;word-break:break-word;font:400 15px/1.5 Archivo,sans-serif;margin:0;background:var(--bg);border:1px dashed var(--line);border-radius:8px;padding:12px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.toast{color:var(--ok);font-weight:600;min-height:24px;margin:8px 0 0}
+</style>
+</head>
+<body>
+<main>
+<h1>Salas sem uso</h1>
+<p class="sub">Registre as salas vazias, confira o relatório e envie pelo WhatsApp.</p>
+
+<section class="card" aria-label="Dados do relatório">
+<div class="row">
+<div class="field"><label for="data">Data</label><input type="date" id="data"></div>
+<div class="field"><label for="hora">Hora</label><input type="time" id="hora"></div>
+</div>
+<div class="field"><label for="local">Bloco ou unidade (opcional)</label><input id="local" placeholder="Ex.: Bloco B, 2º andar"></div>
+<div class="field"><label for="resp">Responsável (opcional)</label><input id="resp" placeholder="Seu nome"></div>
+<button type="button" class="ghost" id="agora">Usar data e hora atuais</button>
+</section>
+
+<section class="card" aria-label="Salas">
+<label for="sala">Número da sala</label>
+<div class="add">
+<input id="sala" inputmode="text" placeholder="Ex.: 101" autocomplete="off">
+<button type="button" class="primary" id="add">Adicionar</button>
+</div>
+<p class="hint">Para várias salas de uma vez, separe por vírgula: 101, 102, 205.</p>
+<div class="chips" id="chips" aria-live="polite"></div>
+</section>
+
+<section class="card" aria-label="Observações">
+<label for="obs">Observações (opcional)</label>
+<textarea id="obs" rows="3" placeholder="Ex.: luzes e ar-condicionado ligados"></textarea>
+</section>
+
+<section class="card" aria-label="Relatório e envio">
+<label>Relatório</label>
+<pre id="saida"></pre>
+<div class="field" style="margin-top:12px">
+<label for="fone">WhatsApp de destino (opcional)</label>
+<input id="fone" type="tel" inputmode="tel" placeholder="DDD + número, ex.: 11 91234-5678">
+<p class="hint">Sem número, o WhatsApp abre para você escolher o contato.</p>
+</div>
+<div class="actions">
+<a class="btn wa" id="wa" target="_blank" rel="noopener">Enviar pelo WhatsApp</a>
+<button type="button" class="ghost" id="copiar">Copiar</button>
+<button type="button" class="ghost" id="limpar">Limpar salas</button>
+</div>
+<p class="toast" id="toast" role="status"></p>
+</section>
+</main>
+
+<script>
+(function(){
+var salas=[];
+var $=function(id){return document.getElementById(id)};
+var KEY="salas-sem-uso-v1";
+
+function pad(n){return String(n).padStart(2,"0")}
+function agora(){
+  var d=new Date();
+  $("data").value=d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  $("hora").value=pad(d.getHours())+":"+pad(d.getMinutes());
+  atualizar();
+}
+function dataBR(v){var p=v.split("-");return p.length===3?p[2]+"/"+p[1]+"/"+p[0]:v}
+
+function texto(){
+  var l=[];
+  l.push("*RELATÓRIO DE SALAS SEM USO*");
+  l.push("Data: "+($("data").value?dataBR($("data").value):"—"));
+  l.push("Hora: "+($("hora").value||"—"));
+  if($("local").value.trim())l.push("Local: "+$("local").value.trim());
+  l.push("");
+  if(salas.length){
+    l.push("Salas sem uso ("+salas.length+"): "+salas.join(", "));
+  }else{
+    l.push("Salas sem uso: nenhuma informada");
+  }
+  if($("obs").value.trim()){l.push("");l.push("Obs.: "+$("obs").value.trim())}
+  if($("resp").value.trim()){l.push("");l.push("Responsável: "+$("resp").value.trim())}
+  return l.join("\n");
+}
+
+function fone(){
+  var d=$("fone").value.replace(/\D/g,"");
+  if(!d)return "";
+  if(d.length<=11&&d.indexOf("55")!==0)d="55"+d;
+  return d;
+}
+
+function desenhar(){
+  var c=$("chips");c.innerHTML="";
+  if(!salas.length){var p=document.createElement("p");p.className="empty";p.textContent="Nenhuma sala adicionada ainda.";c.appendChild(p);return}
+  salas.forEach(function(s,i){
+    var el=document.createElement("span");el.className="chip";
+    el.appendChild(document.createTextNode("Sala "+s));
+    var b=document.createElement("button");b.type="button";b.textContent="×";
+    b.setAttribute("aria-label","Remover sala "+s);
+    b.onclick=function(){salas.splice(i,1);atualizar()};
+    el.appendChild(b);c.appendChild(el);
+  });
+}
+
+function salvar(){
+  try{localStorage.setItem(KEY,JSON.stringify({salas:salas,local:$("local").value,resp:$("resp").value,fone:$("fone").value}))}catch(e){}
+}
+
+function atualizar(){
+  desenhar();
+  var t=texto();
+  $("saida").textContent=t;
+  $("wa").href="https://wa.me/"+fone()+"?text="+encodeURIComponent(t);
+  salvar();
+}
+
+function adicionar(){
+  var v=$("sala").value.split(/[,;\n]+/).map(function(x){return x.trim()}).filter(Boolean);
+  var dup=0;
+  v.forEach(function(x){
+    if(salas.some(function(s){return s.toLowerCase()===x.toLowerCase()}))dup++;
+    else salas.push(x);
+  });
+  salas.sort(function(a,b){return a.localeCompare(b,"pt-BR",{numeric:true})});
+  $("sala").value="";$("sala").focus();
+  msg(dup?"Sala já estava na lista.":"");
+  atualizar();
+}
+
+var tm;
+function msg(t){var e=$("toast");e.textContent=t;clearTimeout(tm);if(t)tm=setTimeout(function(){e.textContent=""},2500)}
+
+$("add").onclick=adicionar;
+$("sala").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();adicionar()}});
+$("agora").onclick=agora;
+$("limpar").onclick=function(){salas=[];msg("Lista de salas limpa.");atualizar()};
+$("copiar").onclick=function(){
+  var t=texto();
+  function ok(){msg("Relatório copiado.")}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok,fallback)}else fallback();
+  function fallback(){
+    var ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();
+    try{document.execCommand("copy");ok()}catch(e){msg("Não foi possível copiar.")}
+    document.body.removeChild(ta);
+  }
+};
+["data","hora","local","resp","obs","fone"].forEach(function(id){$(id).addEventListener("input",atualizar)});
+
+try{
+  var s=JSON.parse(localStorage.getItem(KEY)||"null");
+  if(s){salas=s.salas||[];$("local").value=s.local||"";$("resp").value=s.resp||"";$("fone").value=s.fone||""}
+}catch(e){}
+agora();
+})();
+</script>
+</body>
+</html>
